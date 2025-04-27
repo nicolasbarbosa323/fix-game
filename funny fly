@@ -1,3 +1,69 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local deathSounds = {
+    "rbxassetid://399953818",
+    "rbxassetid://8490606735",
+    "rbxassetid://17593207303",
+    "rbxassetid://5693336619",
+    "rbxassetid://6882766712"
+}
+
+local currentDeathSound = nil
+
+local function stopDeathSound()
+    if currentDeathSound and currentDeathSound.IsPlaying then
+        currentDeathSound:Stop()
+        currentDeathSound:Destroy()
+        currentDeathSound = nil
+    end
+end
+
+local function playRandomDeathSound()
+    stopDeathSound()
+    local sound = Instance.new("Sound")
+    sound.SoundId = deathSounds[math.random(1, #deathSounds)]
+    sound.Volume = 1
+    sound.Parent = workspace
+    sound:Play()
+    currentDeathSound = sound
+    sound.Ended:Connect(function()
+        sound:Destroy()
+        if currentDeathSound == sound then
+            currentDeathSound = nil
+        end
+    end)
+end
+
+local function onCharacterAdded(character)
+    stopDeathSound() -- Para som ao respawnar
+
+    -- Tentar remover o som de morte padrão (se existir)
+    local function removeDefaultDeathSounds()
+        for _, descendant in pairs(character:GetDescendants()) do
+            if descendant:IsA("Sound") and descendant.Name == "Died" then
+                descendant:Destroy()
+            end
+        end
+    end
+
+    removeDefaultDeathSounds()
+    character.DescendantAdded:Connect(function(desc)
+        if desc:IsA("Sound") and desc.Name == "Died" then
+            desc:Destroy()
+        end
+    end)
+
+    local humanoid = character:WaitForChild("Humanoid")
+    humanoid.Died:Connect(playRandomDeathSound)
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+if player.Character then
+    onCharacterAdded(player.Character)
+end
+
 local player = game.Players.LocalPlayer
 
 local cylinders = {}
