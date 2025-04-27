@@ -1,0 +1,68 @@
+local player = game.Players.LocalPlayer
+
+local cylinders = {}
+
+player.CharacterAdded:Connect(function(char)
+    -- Gravidade volta ao normal ao respawnar
+    workspace.Gravity = 196.2
+
+    -- Destroi cilindros antigos
+    for _, cyl in ipairs(cylinders) do
+        if cyl and cyl.Parent then
+            cyl:Destroy()
+        end
+    end
+    cylinders = {}
+
+    local humanoid = char:WaitForChild("Humanoid")
+    local rootPart = char:WaitForChild("HumanoidRootPart")
+
+    humanoid.Died:Connect(function()
+        -- Zera gravidade instantaneamente
+        workspace.Gravity = 0
+
+        -- Solta as partes
+        for _, descendant in ipairs(char:GetDescendants()) do
+            if descendant:IsA("Motor6D") or descendant:IsA("Weld") or descendant:IsA("BallSocketConstraint") or descendant:IsA("WeldConstraint") then
+                descendant:Destroy()
+            end
+        end
+
+        -- IMPULSO EXTREMAMENTE FORTE E GIRO
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+
+                -- IMPULSO GIGANTE pra cima
+                part:ApplyImpulse(Vector3.new(0, part:GetMass() * 50000, 0))
+
+                -- GIRO MUITO LOUCO
+                part:ApplyAngularImpulse(Vector3.new(
+                    math.random(-50000,50000),
+                    math.random(-50000,50000),
+                    math.random(-50000,50000)
+                ))
+            end
+        end
+
+        -- Cria fila de cilindros até um limite certo
+        local cylinderCount = 150 -- Aumentado para 150 cilindros
+        local cylinderHeight = 50
+        local startHeight = -100
+
+        for i = 0, cylinderCount - 1 do
+            local cylinder = Instance.new("Part")
+            cylinder.Shape = Enum.PartType.Cylinder
+            cylinder.Size = Vector3.new(20, cylinderHeight, 20)
+            cylinder.Color = Color3.fromRGB(255, 255, 0)
+            cylinder.Transparency = 0.5
+            cylinder.Anchored = true
+            cylinder.CanCollide = false
+
+            cylinder.CFrame = rootPart.CFrame * CFrame.new(0, startHeight + (i * cylinderHeight), 0) * CFrame.Angles(0, 0, math.rad(90))
+            cylinder.Parent = workspace
+
+            table.insert(cylinders, cylinder)
+        end
+    end)
+end)
